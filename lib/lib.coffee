@@ -26,7 +26,7 @@ AccountsTemplates.configure
     overrideLoginErrors: true
     enablePasswordChange: true
     sendVerificationEmail: true
-    showAddRemoveServices: false
+    showAddRemoveServices: true
     lowercaseUsername: true
     confirmPassword: true
     continuousValidation: true
@@ -90,12 +90,12 @@ AccountsTemplates.configureRoute 'signUp'
 # AccountsTemplates.configureRoute('enrollAccount'); // for creating passwords after logging first time
 
 
-orig_updateOrCreateUserFromExternalService = Accounts.updateOrCreateUserFromExternalService
+# orig_updateOrCreateUserFromExternalService = Accounts.updateOrCreateUserFromExternalService
 
-Accounts.updateOrCreateUserFromExternalService = (serviceName, serviceData, options) ->
-    loggedInUser = Meteor.user()
-    if loggedInUser and typeof loggedInUser.services[serviceName] == 'undefined'
-        setAttr = {}
-        setAttr['services.' + serviceName] = serviceData
-        Meteor.users.update loggedInUser._id, $set: setAttr
-    orig_updateOrCreateUserFromExternalService.apply this, arguments
+# Accounts.updateOrCreateUserFromExternalService = (serviceName, serviceData, options) ->
+#     loggedInUser = Meteor.user()
+#     if loggedInUser and typeof loggedInUser.services[serviceName] == 'undefined'
+#         setAttr = {}
+#         setAttr['services.' + serviceName] = serviceData
+#         Meteor.users.update loggedInUser._id, $set: setAttr
+#     orig_updateOrCreateUserFromExternalService.apply this, arguments
