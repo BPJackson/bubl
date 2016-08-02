@@ -49,23 +49,23 @@ template(name='home')
     //         .ui.center.aligned.header Author
     //         .ui.blue.button.authorFilterButton
     //             |{{$.Session.get 'author_filter'}}
-    if currentUser
-        +atForm
-        +my_tags
-        +check_in
-    .ui.center.aligned.segment.globalcloud
-        .ui.center.aligned.header Global Tags
-        if selected_tags
-            #clear_tags.ui.circular.grey.icon.button
-                i.remove.icon
-        each selected_tags
-            .unselect_tag.ui.large.compact.grey.button
-                i.minus.icon
-                |#{this}
-        each global_tags
-            .select_tag.ui.compact.button(class=cloud_tag_class)
-                |#{this.text}
-                small #{this.count}
+    
+    .ui.container
+        if currentUser
+            +my_tags
+            +check_in
+            .ui.header Global Tags
+            if selected_tags
+                #clear_tags.ui.circular.grey.icon.button
+                    i.remove.icon
+            each selected_tags
+                .unselect_tag.ui.large.compact.grey.button
+                    i.minus.icon
+                    |#{this}
+            each global_tags
+                .select_tag.ui.compact.button(class=cloud_tag_class)
+                    |#{this.text}
+                    small #{this.count}
         // .ui.center.aligned.header Authors
         // if selected_usernames
         //     #clear_usernames.ui.circular.grey.icon.button
@@ -80,7 +80,7 @@ template(name='home')
         //         |#{this.text}
         //         small #{this.count}
     .ui.container
-        +top_10
+        // +top_10
         .ui.centered.aligned.cards
             each docs
                 .ui.card

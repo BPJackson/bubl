@@ -36,7 +36,7 @@ kadira:blaze-layout
 kadira:flow-router
 splendido:accounts-meld
 useraccounts:flow-routing
-accounts-password
 accounts-facebook
 accounts-github
 iandouglas:accounts-ui-semantic-ui
+pauli:accounts-linkedin

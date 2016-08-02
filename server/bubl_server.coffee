@@ -44,49 +44,18 @@ Meteor.methods
                         Meteor.call 'generate_author_cloud', username
             ))
 
-    sync_instagram: (username)->
-        twitterConf = ServiceConfiguration.configurations.findOne(service: 'instagram')
+    sync_instagram: ->
+        # twitterConf = ServiceConfiguration.configurations.findOne(service: 'instagram')
         instagram = Meteor.user().services.instagram
-
-        console.log instagram
-        # Twit = new TwitMaker(
-        #     consumer_key: twitterConf.consumerKey
-        #     consumer_secret: twitterConf.secret
-        #     access_token: twitter.accessToken
-        #     access_token_secret: twitter.accessTokenSecret
-        #     app_only_auth:true)
-
-        # Twit.get 'statuses/user_timeline', {
-        #     screen_name: username
-        #     count: 200
-        #     include_rts: true
-        #     exclude_replies: false
-        # }, Meteor.bindEnvironment(((err, data, response) ->
-        #     for tweet in data
-        #         # console.log tweet
-        #         found_tweet = Docs.findOne(tweet.id_str)
-        #         if found_tweet
-        #             console.log 'found duplicate ', tweet.id_str
-        #             continue
-        #         else
-        #             id = Docs.insert
-        #                 _id: tweet.id_str
-        #                 entities: tweet.entities
-        #                 # tags: ['bubl','tweet']
-        #                 body: tweet.text
-        #                 username: username
-        #                 timestamp: Date.now()
-        #                 tweet_created_at: tweet.created_at
-        #             Meteor.call 'alchemy_tag', id, tweet.text, ->
-        #                 console.log 'alchemy was run'
-        #             Meteor.call 'yaki_tag', id, tweet.text
-        #     existing_author = Authors.findOne username:username
-        #     if existing_author then Meteor.call 'generate_author_cloud', username
-        #     else
-        #         Authors.insert username: username,
-        #             -> 
-        #                 Meteor.call 'generate_author_cloud', username
-        #     ))
+        
+        # console.log 'firing sync_instagram with ', instagram
+        HTTP.call 'GET', "https://api.instagram.com/v1/users/self/media/recent/?access_token=#{instagram.accessToken}", (err,res) ->
+            # console.dir res
+            for item in res.data.data
+                console.log item
+        
+        
+        
 
 
     yaki_tag: (id, body)->
@@ -133,11 +102,11 @@ Meteor.methods
         Meteor.users.update Meteor.userId(),
             $set: location: location
 
-    generate_author_cloud: (username)->
+    generate_user_cloud: (username)->
         match = {}
         match.username = username
         console.log match
-        authored_cloud = Docs.aggregate [
+        cloud = Docs.aggregate [
             { $match: match }
             { $project: tags: 1 }
             { $unwind: '$tags' }
@@ -146,131 +115,12 @@ Meteor.methods
             { $limit: 10 }
             { $project: _id: 0, name: '$_id', count: 1 }
             ]
-        console.log 'authored cloud', authored_cloud
+        console.log 'user cloud', cloud
         
-        authored_list = (tag.name for tag in authored_cloud)
+        list = (tag.name for tag in cloud)
         
-        Authors.update {username: username},
+        Meteor.users.update Meteor.userId(),
             $set:
-                authored_cloud: authored_cloud
-                authored_list: authored_list
-            ,
-                multi: false
-                upsert: true
+                cloud: cloud
+                list: list
 
-Meteor.publish 'top_10', (selected_tags)->
-    # user_ranking = []
-    # Authors.find({
-    #     authored_list: $in: [tag]
-    # })
-    
-    Authors.find({
-        authored_list: $all: selected_tags
-    })
-    
-
-
-Docs.allow
-    insert: (userId, doc)-> userId
-    update: (userId, doc)-> doc.authorId is Meteor.userId()
-    remove: (userId, doc)-> doc.authorId is Meteor.userId()
-
-
-Meteor.publish 'docs', (selected_tags, selected_screen_names)->
-    Counts.publish(this, 'doc_counter', Docs.find(), { noReady: true })
-
-    match = {}
-    if selected_tags.length > 0 then match.tags = $all: selected_tags
-    if selected_screen_names.length > 0 then match.screen_name = $in: selected_screen_names
-
-    Docs.find match,
-        limit: 10
-
-Meteor.publish 'doc', (id)-> Docs.find id
-
-Meteor.publish 'people', -> Meteor.users.find {}
-
-Meteor.publish 'person', (id)-> Meteor.users.find id
-
-Meteor.publish 'usernames', (selected_tags, selected_usernames)->
-    self = @
-
-    match = {}
-    if selected_tags.length > 0 then match.keyword_array = $all: selected_tags
-    # if selected_usernames.length > 0 then match.username = $in: selected_usernames
-
-    cloud = Docs.aggregate [
-        { $match: match }
-        { $project: username: 1 }
-        { $group: _id: '$username', count: $sum: 1 }
-        { $match: _id: $nin: selected_usernames }
-        { $sort: count: -1, _id: 1 }
-        { $limit: 10 }
-        { $project: _id: 0, text: '$_id', count: 1 }
-        ]
-
-    cloud.forEach (username) ->
-        self.added 'usernames', Random.id(),
-            text: username.text
-            count: username.count
-    self.ready()
-
-
-Meteor.publish 'tags', (selected_tags, selected_usernames)->
-    self = @
-    # me = Meteor.users.findOne @userId
-    # console.log me
-    match = {}
-    if selected_tags.length > 0 then match.tags = $all: selected_tags
-    if selected_usernames.length > 0 then match.username = $in: selected_usernames
-    # match.username = me.profile.name
-
-    cloud = Docs.aggregate [
-        { $match: match }
-        { $project: tags: 1 }
-        { $unwind: '$tags' }
-        { $group: _id: '$tags', count: $sum: 1 }
-        { $match: _id: $nin: selected_tags }
-        { $sort: count: -1, _id: 1 }
-        { $limit: 20 }
-        { $project: _id: 0, text: '$_id', count: 1 }
-        ]
-
-    cloud.forEach (tag, i) ->
-        self.added 'tags', Random.id(),
-            text: tag.text
-            count: tag.count
-            index: i
-
-    self.ready()
-    
-    
-Meteor.publish 'people_tags', (selected_tags)->
-    self = @
-    match = {}
-    if selected_tags?.length > 0 then match.tags = $all: selected_tags
-    match._id = $ne: @userId
-
-    tagCloud = Meteor.users.aggregate [
-        { $match: match }
-        { $project: "tags": 1 }
-        { $unwind: "$tags" }
-        { $group: _id: "$tags", count: $sum: 1 }
-        { $match: _id: $nin: selected_tags }
-        { $sort: count: -1, _id: 1 }
-        { $limit: 50 }
-        { $project: _id: 0, name: '$_id', count: 1 }
-        ]
-
-    tagCloud.forEach (tag, i) ->
-        self.added 'people_tags', Random.id(),
-            name: tag.name
-            count: tag.count
-            index: i
-
-    self.ready()
-
-
-# Meteor.publish 'me_as_author', ->
-#     me = Meteor.users.findOne @userId
-#     Authors.find username: me.profile.name

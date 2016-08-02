@@ -2,18 +2,18 @@
 @selected_usernames = new ReactiveArray []
 
 
-Meteor.loginWithInstagram (err) ->
-    if err
-        console.log 'login failed', err
-    else
-        console.log 'login success', Meteor.user()
-    return
+# Meteor.loginWithInstagram (err) ->
+#     if err
+#         console.log 'login failed', err
+#     else
+#         console.log 'login success', Meteor.user()
+#     return
 
 Template.home.onCreated ->
     Meteor.subscribe 'people'
     # @autorun -> Meteor.subscribe('usernames', selected_tags.array())
-    @autorun -> Meteor.subscribe('tags', selected_tags.array(), selected_usernames.array())
-    @autorun -> Meteor.subscribe('docs', selected_tags.array(), selected_usernames.array())
+    @autorun -> Meteor.subscribe 'tags', selected_tags.array() 
+    @autorun -> Meteor.subscribe 'docs', selected_tags.array()
 
 Template.view.onCreated ->
     Meteor.subscribe 'person', @authorId
@@ -26,7 +26,7 @@ Template.nav.helpers
 Template.nav.events
     'click .sync_tweets': -> Meteor.call 'sync_tweets', Meteor.user().profile.name, ->
    
-    'click .sync_instagram': -> Meteor.call 'sync_instagram', Meteor.user().profile.name, ->
+    'click .sync_instagram': -> Meteor.call 'sync_instagram', ->
    
     'click .clear_my_docs': -> Meteor.call 'clear_my_docs', ->
         Meteor.setTimeout (->
