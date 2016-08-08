@@ -45,17 +45,40 @@ Meteor.methods
             ))
 
     sync_instagram: ->
-        # twitterConf = ServiceConfiguration.configurations.findOne(service: 'instagram')
+        # console.log 'firing sync_instagram with ', instagram
+        
         instagram = Meteor.user().services.instagram
         
-        # console.log 'firing sync_instagram with ', instagram
-        HTTP.call 'GET', "https://api.instagram.com/v1/users/self/media/recent/?access_token=#{instagram.accessToken}", (err,res) ->
-            # console.dir res
-            for item in res.data.data
-                console.log item
+        Meteor.call 'call_instagram', "https://api.instagram.com/v1/users/self/media/recent/?access_token=#{instagram.accessToken}&count=-1"
         
-        
-        
+    call_instagram: (url)->
+        # increment++
+        console.log 'calling instagram'
+        HTTP.call 'GET', url, (err,res) ->
+            if err then console.log err
+            else
+                console.log 'instagram response is: ', res
+                for post in res.data.data
+                    # console.log post
+            
+                    found_post = Docs.findOne post.id
+                    if found_post
+                        console.log 'found duplicate ', post.id
+                        continue
+                    else
+                        id = Docs.insert
+                            _id: post.id
+                            type: 'instagram'
+                            tags: post.tags
+                            body: post.caption.text
+                            thumbnail_url: post.images.thumbnail.url
+                            username: post.user.username
+                            timestamp: Date.now()
+                            post_created_at: post.created_time
+                if res.data.pagination
+                    console.log "about to recursively call instagram again with #{res.data.pagination.next_url}"
+                    Meteor.call 'call_instagram', res.data.pagination.next_url
+                else console.log 'end of pagination' 
 
 
     yaki_tag: (id, body)->

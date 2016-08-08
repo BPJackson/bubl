@@ -20,7 +20,7 @@
     "grid": true,
     "header": true,
     "icon": true,
-    "image": false,
+    "image": true,
     "input": true,
     "item": false,
     "label": true,

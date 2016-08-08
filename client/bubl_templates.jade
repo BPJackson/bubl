@@ -97,6 +97,8 @@ template(name='view')
         each tags
             .doc_tag.ui.compact.button(class=doc_tag_class)
                 div #{this}
+    if this.thumbnail_url
+        image.ui.image(src=thumbnail_url)
     div Yaki Tags
         each yaki_tags
             .ui.label #{this}
